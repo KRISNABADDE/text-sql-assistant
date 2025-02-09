@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Text to SQL Converter</title>
+    <style>
+        body {
+          font-family: Arial, sans-serif;
+          margin: 20px;
+        }
+        textarea {
+          width: 100%;
+          max-width: 600px;
+        }
+        #sql_response {
+          margin-top: 20px;
+          padding: 10px;
+          background-color: #f4f4f4;
+          border: 1px solid #ccc;
+          white-space: pre-wrap;
+          font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+<h1>Text to SQL Converter</h1>
+<form id="queryForm">
+    <label for="natural_query">Enter your query:</label><br>
+    <textarea id="natural_query" name="natural_query" rows="4" cols="50"></textarea><br><br>
+    <button type="submit">Convert to SQL</button>
+</form>
+<div id="sql_response"></div>
+
+<script>
+    document.getElementById('queryForm').addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const queryText = document.getElementById('natural_query').value;
+        const responseDiv = document.getElementById('sql_response');
+        responseDiv.textContent = "Processing...";
+
+        try {
+            const response = await fetch('/query', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ natural_query: queryText })
+            });
+
+            // Clear previous response.
+            responseDiv.textContent = "";
+
+            // Use a reader to stream the response.
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let done = false;
+            while (!done) {
+                const { value, done: doneReading } = await reader.read();
+                done = doneReading;
+                const chunkValue = decoder.decode(value);
+                responseDiv.textContent += chunkValue;
+            }
+        } catch (error) {
+            responseDiv.textContent = "An error occurred: " + error;
+        }
+    });
+</script>
+</body>
+</html>
